@@ -1,0 +1,48 @@
+ASISTENCIA 5.° "E" — PWA v2 (App Instalable)
+============================================================
+
+CÓMO CONFIRMAR QUE ES ESTA VERSIÓN Y NO UNA ANTERIOR
+El archivo principal ahora se llama ASISTENCIA_5E_v2.html (antes se
+llamaba index.html) y pesa aproximadamente 463 KB. Si al extraer el ZIP
+ves un archivo llamado "index.html" o de un tamaño mucho menor, es una
+copia vieja — bórrala.
+
+PARA PROBARLA EN TU CELULAR AHORA (sin publicar en internet)
+1. Extrae este ZIP en una carpeta NUEVA (no reutilices carpetas viejas).
+2. Abre el archivo ASISTENCIA_5E_v2.html con Chrome.
+3. Ve a la pestaña "Informe semanal" y confirma que ahora sí aparece la
+   sección "Informes individuales por estudiante" con el botón
+   "📦 Generar TODOS (ZIP)" y la lista de los 28 estudiantes.
+
+IMPORTANTE PARA CUANDO LA PUBLIQUES EN GITHUB PAGES
+GitHub Pages necesita que el archivo principal se llame exactamente
+"index.html" para que la dirección funcione sin escribir el nombre del
+archivo al final. Antes de subir los archivos a GitHub:
+1. Dentro de la carpeta descomprimida, renombra el archivo
+   ASISTENCIA_5E_v2.html a index.html
+   (en el explorador de archivos del celular: mantén presionado sobre el
+   archivo → "Cambiar nombre" / "Renombrar").
+2. Sube todos los archivos (ya con el nombre index.html incluido) siguiendo
+   los mismos pasos de siempre:
+   github.com/walrry001-cpu/asistencia-5e/upload/main (o el repositorio
+   que hayas creado) → "choose your files" → selecciona los 14 archivos →
+   "Commit changes".
+3. Activa Pages en:
+   github.com/walrry001-cpu/asistencia-5e/settings/pages
+   Branch: main · Carpeta: / (root) · Save.
+4. Tu app quedará en:
+   https://walrry001-cpu.github.io/asistencia-5e/
+
+Si ya la tenías publicada antes con otro contenido, sube estos archivos
+igual (con el nombre cambiado a index.html) — GitHub reemplaza los que
+tengan el mismo nombre.
+
+DESPUÉS DE PUBLICAR
+En el celular donde ya tengas la app instalada, entra a la pestaña
+"Copia de seguridad" → "🔄 Borrar caché y actualizar app", para que tome
+la versión nueva.
+
+RECORDATORIO
+Los datos se guardan en el navegador del dispositivo donde uses la app.
+Usa "💾 Descargar copia de seguridad" seguido y guarda ese archivo en un
+lugar seguro (Drive, correo, USB).
