@@ -1,10 +1,10 @@
 // Service Worker — Asistencia 5.° "E"
-const CACHE_VERSION = "v4";
+const CACHE_VERSION = "v5";
 const CACHE_NAME = "asistencia5e-" + CACHE_VERSION;
 
 const CORE_ASSETS = [
   "./",
-  "./ASISTENCIA_5E_v2.html",
+  "./index.html",
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png",
@@ -53,7 +53,7 @@ self.addEventListener("fetch", (event) => {
           return res;
         })
         .catch(() => {
-          if (req.mode === "navigate") return caches.match("./ASISTENCIA_5E_v2.html");
+          if (req.mode === "navigate") return caches.match("./index.html");
         });
     })
   );

@@ -1,0 +1,33 @@
+ASISTENCIA 5.° "E" — CORRECCIÓN DEL ÍCONO/INSTALACIÓN
+============================================================
+
+QUÉ PASÓ
+El manifest.json traía un identificador ("id": "/") que apuntaba a la
+RAÍZ del dominio walrry001-cpu.github.io en vez de a la carpeta propia
+de esta app. Como tu Registro de Evaluación vive en el mismo dominio
+(en otra carpeta), el celular confundió ambas apps al instalar y por
+eso abría una ruta que no existe (404). Ya corregido: ahora
+"id": "./" (relativo a la carpeta de esta app).
+
+PASOS PARA CORREGIRLO EN TU CELULAR
+
+1. DESINSTALA el ícono de "A" (Asistencia) que ya tienes en tu pantalla
+   de inicio: mantén presionado sobre él → "Desinstalar".
+
+2. Sube estos archivos a GitHub, reemplazando los anteriores:
+   github.com/walrry001-cpu/asistencia-del-quinto-grado-secci-n-e/upload/main
+   → "choose your files" → selecciona los 14 archivos de este ZIP
+   (incluye index.html) → "Commit changes".
+
+3. Abre de nuevo en Chrome:
+   walrry001-cpu.github.io/asistencia-del-quinto-grado-secci-n-e/
+
+4. IMPORTANTE — antes de reinstalar, borra la caché vieja: entra a la
+   pestaña "Copia de seguridad" → "🔄 Borrar caché y actualizar app".
+   Esto asegura que tome el manifest.json corregido y no el anterior.
+
+5. Recién ahí, vuelve a instalar: menú ⋮ → "Instalar aplicación".
+
+Si el ícono de "A" quedó también instalado incorrectamente en el
+navegador de escritorio o en otro dispositivo, repite el mismo
+desinstalar → borrar caché → reinstalar ahí también.
