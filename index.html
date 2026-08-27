@@ -266,6 +266,7 @@
 
 <nav>
   <button data-tab="asistencia" class="active">Pasar asistencia</button>
+  <button data-tab="estudiantes">Estudiantes</button>
   <button data-tab="contactos">Contactos</button>
   <button data-tab="informe">Informe semanal</button>
   <button data-tab="calendario">Calendario</button>
@@ -304,6 +305,25 @@
   </section>
 
   <!-- ===== TAB: CONTACTOS ===== -->
+  <section id="tab-estudiantes">
+    <h2>Matrícula y retiro de estudiantes</h2>
+    <p class="note">
+      Un estudiante recién matriculado se agrega aquí y se ubica solo, en orden alfabético,
+      en toda la app (asistencia, contactos e informes). Un estudiante retirado (por ejemplo,
+      trasladado a otra I.E.) se elimina aquí junto con toda su asistencia registrada y su
+      número de contacto guardado. Esto no se puede deshacer.
+    </p>
+    <div class="field-row">
+      <input type="text" id="inputNuevoEstudianteAsist" placeholder="Nombre completo del estudiante nuevo" style="flex:1;">
+      <button class="primary" id="btnAgregarEstudianteAsist">Agregar</button>
+    </div>
+    <div id="estadoGestionEstudiantesAsist" class="note"></div>
+    <table>
+      <thead><tr><th class="num">N.°</th><th>Estudiante</th><th style="width:110px"></th></tr></thead>
+      <tbody id="listaGestionEstudiantesAsist"></tbody>
+    </table>
+  </section>
+
   <section id="tab-contactos">
     <h2>Datos de contacto de los padres</h2>
     <p class="note">
@@ -398,18 +418,100 @@
 
 <script>
 /* ============ DATOS BASE ============ */
-const STUDENTS = [
-"Abner William Arias Quiroz","Viktor Valerio Bazán Durán","Dayana Melany Cadenillas Cachi",
-"Cinthya Liseth Calle Acuña","Helen Alisson Camacho Sánchez","Adriana Lucía Cerquín Cotrina",
-"Angie Jharren Chávez Rubio","Deysi Natali Cortez Huaccha","Yordan Andree Cusquisibán Chuquilín",
-"Erika Thamara Fernández Moreno","Franco Snayder Herrera Utani","Deysi Yhakelin Huingo Cueva",
-"Ian Larios Villar","Esmeralda Yamileth López Barboza","Jimena Saray López Cercado",
-"Mikel Andre Marín Marín","Caleb Moisés Medina Huamán","Logahn Jahilim Mendoza Mendoza",
-"Illari Alejandra Orihuela Muñoz","Raj Nicolás Portal Linares","Edwin Rodrigo Quito Lulayco",
-"Mathias Jamir Silva Calua","María de los Ángeles Sulca Quispe","Keyla Judith Terrones Infante",
-"Dayvson Zuriel Vásquez Aguilar","Dominick Fabrizio Vásquez Portal","Antoni Neymar Velásquez Bueno",
-"Thamara Sarai Villanueva Jara"
-].map((n,i)=>({id:i+1, nombre:n}));
+// IMPORTANTE: cada estudiante tiene un id FIJO de por vida. Nunca se
+// recalcula por posición en la lista, para que agregar o quitar
+// estudiantes no cambie el id de nadie más (eso rompería la asistencia
+// y los contactos ya guardados de los demás). El número de lista
+// visible (num, columna "N.°") sí se recalcula siempre en orden
+// alfabético por apellidos — ver renumerarRoster().
+const STUDENTS_BASE = [
+{id:1,nombre:"Abner William Arias Quiroz"},{id:2,nombre:"Viktor Valerio Bazán Durán"},{id:3,nombre:"Dayana Melany Cadenillas Cachi"},
+{id:4,nombre:"Cinthya Liseth Calle Acuña"},{id:5,nombre:"Helen Alisson Camacho Sánchez"},{id:6,nombre:"Adriana Lucía Cerquín Cotrina"},
+{id:7,nombre:"Angie Jharren Chávez Rubio"},{id:8,nombre:"Deysi Natali Cortez Huaccha"},{id:9,nombre:"Yordan Andree Cusquisibán Chuquilín"},
+{id:10,nombre:"Erika Thamara Fernández Moreno"},{id:11,nombre:"Franco Snayder Herrera Utani"},{id:12,nombre:"Deysi Yhakelin Huingo Cueva"},
+{id:13,nombre:"Ian Larios Villar"},{id:14,nombre:"Esmeralda Yamileth López Barboza"},{id:15,nombre:"Jimena Saray López Cercado"},
+{id:29,nombre:"Ruth Jhamely López Rafael"},
+{id:16,nombre:"Mikel Andre Marín Marín"},{id:17,nombre:"Caleb Moisés Medina Huamán"},{id:18,nombre:"Logahn Jahilim Mendoza Mendoza"},
+{id:19,nombre:"Illari Alejandra Orihuela Muñoz"},{id:20,nombre:"Raj Nicolás Portal Linares"},{id:21,nombre:"Edwin Rodrigo Quito Lulayco"},
+{id:22,nombre:"Mathias Jamir Silva Calua"},{id:23,nombre:"María de los Ángeles Sulca Quispe"},{id:24,nombre:"Keyla Judith Terrones Infante"},
+{id:25,nombre:"Dayvson Zuriel Vásquez Aguilar"},{id:26,nombre:"Dominick Fabrizio Vásquez Portal"},{id:27,nombre:"Antoni Neymar Velásquez Bueno"},
+{id:28,nombre:"Thamara Sarai Villanueva Jara"}
+];
+
+let STUDENTS = STUDENTS_BASE.slice();
+let rosterOverridesAsist = { agregados: [], eliminadosIds: [] };
+
+// Convención peruana: se asume que las dos últimas palabras del nombre
+// completo son los apellidos, y se ordena alfabéticamente por ahí.
+function apellidosParaOrden(nombreCompleto){
+  const palabras = nombreCompleto.trim().split(/\s+/);
+  if(palabras.length <= 2) return nombreCompleto.toLowerCase();
+  return palabras.slice(-2).join(' ').toLowerCase();
+}
+function compararEstudiantesAsist(a, b){
+  return apellidosParaOrden(a.nombre).localeCompare(apellidosParaOrden(b.nombre), 'es')
+      || a.nombre.localeCompare(b.nombre, 'es');
+}
+function renumerarRosterAsist(){
+  STUDENTS.slice().sort(compararEstudiantesAsist).forEach((s,i)=>{ s.num = i+1; });
+}
+function rosterOrdenadoAsist(){
+  return STUDENTS.slice().sort(compararEstudiantesAsist);
+}
+function aplicarRosterOverridesAsist(){
+  const base = STUDENTS_BASE.filter(s => !rosterOverridesAsist.eliminadosIds.includes(s.id));
+  STUDENTS = base.concat(rosterOverridesAsist.agregados);
+  renumerarRosterAsist();
+}
+function loadRosterOverridesAsist(){
+  rosterOverridesAsist = LS.get("asistencia5E_roster_overrides", { agregados: [], eliminadosIds: [] });
+  if(!Array.isArray(rosterOverridesAsist.agregados)) rosterOverridesAsist.agregados = [];
+  if(!Array.isArray(rosterOverridesAsist.eliminadosIds)) rosterOverridesAsist.eliminadosIds = [];
+  aplicarRosterOverridesAsist();
+}
+function saveRosterOverridesAsist(){
+  LS.set("asistencia5E_roster_overrides", rosterOverridesAsist);
+}
+
+// Agrega un estudiante nuevo (recién matriculado). Se ubica solo en el
+// lugar alfabético que le corresponde y queda guardado en este dispositivo.
+function agregarEstudianteNuevoAsist(nombreCompletoCrudo){
+  const nombre = nombreCompletoCrudo.trim().replace(/\s+/g,' ');
+  if(!nombre) return { ok:false, msg:'Escribe el nombre completo del estudiante.' };
+  if(STUDENTS.some(s=>s.nombre.toLowerCase()===nombre.toLowerCase())){
+    return { ok:false, msg:'Ya existe un estudiante con ese nombre en la lista.' };
+  }
+  const idsUsados = STUDENTS_BASE.concat(rosterOverridesAsist.agregados).map(s=>s.id);
+  const nuevoId = Math.max(0, ...idsUsados) + 1;
+  const nuevo = { id: nuevoId, nombre };
+  rosterOverridesAsist.agregados.push(nuevo);
+  saveRosterOverridesAsist();
+  aplicarRosterOverridesAsist();
+  return { ok:true, estudiante: nuevo };
+}
+
+// Retira a un estudiante (por ejemplo, se trasladó a otra I.E.) y
+// elimina TODO lo que le pertenece: su lugar en la lista, su asistencia
+// registrada en todas las fechas, y su número de contacto guardado.
+function eliminarEstudianteYArchivosAsist(id){
+  const est = STUDENTS.find(s=>s.id===id);
+  if(!est) return { ok:false };
+
+  if(!rosterOverridesAsist.eliminadosIds.includes(id)) rosterOverridesAsist.eliminadosIds.push(id);
+  rosterOverridesAsist.agregados = rosterOverridesAsist.agregados.filter(s=>s.id!==id);
+  saveRosterOverridesAsist();
+
+  const all = getAttendance();
+  Object.keys(all).forEach(iso=>{ delete all[iso][id]; });
+  saveAttendanceAll(all);
+
+  const phones = LS.get("asistencia5E_phones", {}) || {};
+  delete phones[id];
+  savePhones(phones);
+
+  aplicarRosterOverridesAsist();
+  return { ok:true, nombre: est.nombre };
+}
 
 /* Números de WhatsApp de los apoderados, precargados por el docente.
    Si en "Contactos" se guardan cambios, esos cambios reemplazan esta lista
@@ -495,6 +597,11 @@ function saveAttendanceAll(a){ LS.set("asistencia5E_attendance", a); }
 function getNoLectivos(){ return LS.get("asistencia5E_no_lectivos", DEFAULT_NO_LECTIVOS); }
 function saveNoLectivos(list){ LS.set("asistencia5E_no_lectivos", list); }
 
+// Se carga aquí, apenas están listas las funciones de almacenamiento y
+// antes de cualquier otro renderizado que dependa de la lista de
+// estudiantes (agregados/retirados desde la app quedan aplicados ya).
+loadRosterOverridesAsist();
+
 /* ============ NAVEGACIÓN DE PESTAÑAS ============ */
 document.querySelectorAll("nav button").forEach(btn=>{
   btn.addEventListener("click", ()=>{
@@ -563,11 +670,11 @@ function renderAsistencia(){
 
   const tbody = document.getElementById("listaAsistencia");
   tbody.innerHTML = "";
-  STUDENTS.forEach(st=>{
+  rosterOrdenadoAsist().forEach(st=>{
     const estadoActual = getEstado(dayRecord[st.id]) || "A";
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td class="num">${st.id}</td>
+      <td class="num">${String(st.num).padStart(2,'0')}</td>
       <td>${st.nombre}</td>
       <td>
         <select class="estado estado-${estadoActual}" data-id="${st.id}">
@@ -648,10 +755,10 @@ function renderContactos(){
   const phones = getPhones();
   const tbody = document.getElementById("listaContactos");
   tbody.innerHTML = "";
-  STUDENTS.forEach(st=>{
+  rosterOrdenadoAsist().forEach(st=>{
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td class="num">${st.id}</td>
+      <td class="num">${String(st.num).padStart(2,'0')}</td>
       <td>${st.nombre}</td>
       <td><input type="tel" data-id="${st.id}" value="${phones[st.id] || ""}" placeholder="51987654321"></td>`;
     tbody.appendChild(tr);
@@ -664,6 +771,50 @@ document.getElementById("btnGuardarContactos").addEventListener("click", ()=>{
   });
   savePhones(phones);
   alert("Contactos guardados en este dispositivo.");
+});
+
+/* ============ TAB: ESTUDIANTES (matrícula / retiro) ============ */
+function renderGestionEstudiantesAsist(){
+  const tbody = document.getElementById("listaGestionEstudiantesAsist");
+  tbody.innerHTML = rosterOrdenadoAsist().map(s=>`
+    <tr>
+      <td class="num">${String(s.num).padStart(2,'0')}</td>
+      <td>${s.nombre}</td>
+      <td><button class="ghost" data-retirar-est="${s.id}" style="color:#b3261e;">Retirar</button></td>
+    </tr>
+  `).join('');
+  tbody.querySelectorAll('[data-retirar-est]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = Number(btn.dataset.retirarEst);
+      const est = STUDENTS.find(s=>s.id===id);
+      if(!est) return;
+      if(!confirm(`¿Retirar a "${est.nombre}" de la sección? Esto también eliminará permanentemente toda su asistencia registrada y su número de contacto guardado. Esta acción no se puede deshacer.`)) return;
+      const r = eliminarEstudianteYArchivosAsist(id);
+      if(r.ok){
+        renderGestionEstudiantesAsist();
+        renderAsistencia();
+        renderContactos();
+        pintarListaInformesIndividuales("");
+        document.getElementById("estadoGestionEstudiantesAsist").textContent = `Se retiró a ${r.nombre} y se eliminó toda su información guardada.`;
+      }
+    });
+  });
+}
+
+document.getElementById("btnAgregarEstudianteAsist").addEventListener("click", ()=>{
+  const input = document.getElementById("inputNuevoEstudianteAsist");
+  const estado = document.getElementById("estadoGestionEstudiantesAsist");
+  const r = agregarEstudianteNuevoAsist(input.value);
+  if(!r.ok){
+    estado.textContent = r.msg;
+    return;
+  }
+  input.value = "";
+  estado.textContent = `Se agregó a ${r.estudiante.nombre} en el N.° ${String(r.estudiante.num).padStart(2,'0')} de la lista.`;
+  renderGestionEstudiantesAsist();
+  renderAsistencia();
+  renderContactos();
+  pintarListaInformesIndividuales("");
 });
 
 /* ============ TAB: CALENDARIO ============ */
@@ -713,8 +864,7 @@ document.getElementById("btnGenerarPDF").addEventListener("click", ()=>{
   doc.line(30,y+4,780,y+4);
   y += 16;
 
-  STUDENTS.forEach(st=>{
-    let faltas=0, faltasJust=0, tard=0;
+  rosterOrdenadoAsist().forEach(st=>{
     const rowVals = days.map(iso=>{
       const v = getEstado(all[iso] && all[iso][st.id]) || (isSchoolDay(iso) ? "A" : "-");
       if(v==="F") faltas++;
@@ -826,10 +976,10 @@ function pintarListaInformesIndividuales(filtro){
   const cont = document.getElementById("listaInformesIndividuales");
   cont.innerHTML = "";
   const f = (filtro || "").trim().toLowerCase();
-  STUDENTS.filter(s => !f || s.nombre.toLowerCase().includes(f)).forEach(s=>{
+  rosterOrdenadoAsist().filter(s => !f || s.nombre.toLowerCase().includes(f)).forEach(s=>{
     const row = document.createElement("div");
     row.className = "wa-item";
-    row.innerHTML = `<span>${s.id}. ${s.nombre}</span>`;
+    row.innerHTML = `<span>${String(s.num).padStart(2,'0')}. ${s.nombre}</span>`;
     const btn = document.createElement("button");
     btn.className = "ghost";
     btn.textContent = "Generar PDF";
@@ -955,6 +1105,7 @@ document.getElementById("btnClearCache").addEventListener("click", async ()=>{
 renderAsistencia();
 renderContactos();
 renderCalendario();
+renderGestionEstudiantesAsist();
 </script>
 </body>
 </html>
