@@ -784,10 +784,10 @@ function armarMensajeWA(st, estado, horaTexto, iso, racha){
 Si la inasistencia fue por motivos de salud o por un permiso, le pido presentar el documento sustentatorio (receta médica, cita o constancia de atención, certificado del establecimiento de salud, o solicitud de permiso) para registrarla como justificada.
 ` + (racha === 3 ?
 `
-Su hijo(a) acumula tres inasistencias injustificadas consecutivas. Le comunico con respeto que, de producirse una falta más (la cuarta consecutiva), se elevará un informe al Director para que lo(a) convoque, con la finalidad de que justifique las inasistencias ante el Director o el Subdirector que él disponga. Deseo que no se llegue a ello: lo más importante es que su hijo(a) vuelva a clases.
+Su hijo(a) acumula varias inasistencias injustificadas consecutivas. Quisiera evitar tener que comunicarlo a la Dirección; por ello le ruego enviarlo(a) a clases desde mañana y acercarse conmigo si existe algún motivo que sustentar. De continuar las inasistencias, me veré en la necesidad de ponerlo en conocimiento de la Dirección, que podrá convocarlo(a) para que justifique las inasistencias ante el Director o el Subdirector que él disponga.
 ` : racha >= 4 ?
 `
-Su hijo(a) acumula ${racha} inasistencias injustificadas consecutivas. Por ello, se está elevando el informe respectivo al Director para que lo(a) convoque, con la finalidad de que justifique las inasistencias ante el Director o el Subdirector que él disponga. Le pido acercarse con el documento sustentatorio y, sobre todo, enviar a su hijo(a) a clases desde mañana.
+Su hijo(a) acumula varias inasistencias injustificadas consecutivas. Me veo en la necesidad de poner el caso en conocimiento de la Dirección, que podrá convocarlo(a) para que justifique las inasistencias ante el Director o el Subdirector que él disponga. Le pido acercarse con el documento sustentatorio y, sobre todo, enviar a su hijo(a) a clases desde mañana.
 ` : "") + `
 Yo siempre estaré dispuesto a apoyarlo(a) para que se ponga al día, pero lo más importante es que esté presente. Confío en que usted, como su principal apoyo, hará todo lo posible para que no vuelva a faltar. Gracias.`;
   } else if(estado === "FJ"){
@@ -851,8 +851,6 @@ function generarInformeDirector(stId, iso){
   if(!window.jspdf){ alert("No se pudo cargar el generador de PDF. Verifica tu conexión a internet e inténtalo de nuevo."); return; }
   const st = STUDENTS.find(x => String(x.id) === String(stId));
   if(!st){ alert("No se encontró al estudiante."); return; }
-  const fechas = fechasRachaF(st.id, iso);
-  const n = fechas.length;
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:"portrait", unit:"pt", format:"a4"});
   const L = 56, W = 483;
@@ -880,29 +878,17 @@ function generarInformeDirector(stId, iso){
   filaMemo("A", "Prof. Segundo Rogelio Ayala Salazar — Director de la I.E.");
   filaMemo("Atención", "Subdirector(a) que disponga el Director");
   filaMemo("De", 'Prof. Walter Rodrigo Arribasplata Chavarry — Docente del 5.° Grado "E"');
-  filaMemo("Asunto", `Informe de inasistencias injustificadas consecutivas del(a) estudiante ${st.nombre}`);
+  filaMemo("Asunto", `Informe sobre inasistencias consecutivas del(a) estudiante ${st.nombre}`);
   filaMemo("Fecha", `Cajamarca, ${fmtLarga(iso)}`);
   doc.line(L, y, L+W, y); y += 20;
 
-  parrafo(`Me dirijo a usted para informarle que el(la) estudiante ${st.nombre}, de 5.° Grado Sección "E", registra ${n} inasistencias injustificadas consecutivas, según el registro de asistencia del aula, en los siguientes días lectivos:`);
-  y += 4;
-  parrafo(fechas.map(f=>fmtLarga(f)).join("; ") + ".", 10.5, 14);
-  y += 8;
-
-  doc.setFontSize(10.5);
-  doc.text("Acciones realizadas por el docente:", L, y); y += 17;
-  const acciones = [
-    "( ) Comunicación al padre/madre de familia por WhatsApp el ____ / ____ / 2026.",
-    "( ) Comunicación telefónica o personal el ____ / ____ / 2026.",
-    "( ) Documento sustentatorio presentado:   ( ) No   ( ) Sí: ______________________",
-    "Motivo manifestado por la familia: ______________________________________________"
-  ];
-  acciones.forEach(t=>{ parrafo(t, 10, 14); y += 3; });
-  y += 8;
-
-  parrafo(`Por lo expuesto, solicito a su despacho convocar al padre, madre o apoderado del(a) estudiante, con la finalidad de que justifique las inasistencias ante el Director o el Subdirector que usted disponga, y se adopten las acciones que correspondan para garantizar la asistencia regular y el derecho a la educación del(a) estudiante.`);
+  parrafo(`Me dirijo a usted para ponerle en conocimiento que el(la) estudiante ${st.nombre}, de 5.° Grado Sección "E", registra varias inasistencias injustificadas consecutivas, según el registro de asistencia del aula.`);
   y += 6;
-  parrafo("Es todo cuanto informo para su conocimiento y fines.");
+  parrafo(`Al padre, madre o apoderado se le han enviado por WhatsApp los mensajes respectivos por cada inasistencia registrada y, pese a ello, el(la) estudiante continúa sin asistir a clases.`);
+  y += 6;
+  parrafo(`Por esta razón, viéndome en la necesidad de poner el caso en su conocimiento, ruego a su despacho, si lo considera pertinente, disponer lo que corresponda para que el padre, madre o apoderado pueda justificar las inasistencias ante el Director o el Subdirector que usted disponga, en bien del derecho a la educación del(a) estudiante.`);
+  y += 6;
+  parrafo("Es todo cuanto informo para su conocimiento.");
   y += 6;
   parrafo("Atentamente,");
   y += 6;
@@ -1409,7 +1395,7 @@ window.addEventListener("appinstalled", ()=>{
   deferredInstallPrompt = null;
   document.getElementById("pwaInstallWrap").style.display = "none";
 });
-const APP_VERSION = "20261014-8";
+const APP_VERSION = "20261014-9";
 /* Limpia cachés de versiones anteriores una sola vez por versión.
    No toca localStorage, así que la asistencia y los contactos se conservan. */
 (async function limpiarCacheVieja(){

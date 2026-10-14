@@ -1,7 +1,7 @@
 /* Service worker "red primero": siempre intenta traer la versión más reciente
    y solo usa la copia guardada cuando no hay internet. Al activarse borra
    todas las cachés anteriores. */
-const CACHE = "asistencia5e-20261014-8";
+const CACHE = "asistencia5e-20261014-9";
 
 self.addEventListener("install", () => self.skipWaiting());
 
