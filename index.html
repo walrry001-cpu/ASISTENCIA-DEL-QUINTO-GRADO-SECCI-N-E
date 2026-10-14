@@ -384,12 +384,13 @@
     <p class="note">
       Totales por estudiante del mes elegido, para copiarlos al SIAGIE sin errores. Se cuentan solo los
       días lectivos hasta hoy; un día sin registro se toma como asistencia (igual que en los informes PDF).
-      Esta pestaña no envía nada al SIAGIE: tú ingresas los datos con tu usuario.
+      Puedes copiarlo o descargarlo en PDF para imprimirlo. Esta pestaña no envía nada al SIAGIE: tú ingresas los datos con tu usuario.
     </p>
     <div class="field-row">
       <label for="mesSiagie">Mes:</label>
       <input type="month" id="mesSiagie">
       <button class="ghost" id="btnCopiarSiagie">📋 Copiar resumen</button>
+      <button class="primary" id="btnPDFSiagie" style="margin-top:0;">🖨️ Descargar PDF</button>
     </div>
     <div id="infoSiagie" class="day-status lectivo"></div>
     <div style="overflow-x:auto;">
@@ -1141,6 +1142,94 @@ document.getElementById("btnCopiarSiagie").addEventListener("click", async ()=>{
   }
 });
 
+/* PDF imprimible del resumen mensual */
+function nombreMes(ym){
+  const meses=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Setiembre","Octubre","Noviembre","Diciembre"];
+  const [y,m] = ym.split("-").map(Number);
+  return meses[m-1]+" "+y;
+}
+document.getElementById("btnPDFSiagie").addEventListener("click", ()=>{
+  if(!window.jspdf){ alert("No se pudo cargar el generador de PDF. Verifica tu conexión a internet e inténtalo de nuevo."); return; }
+  const ym = document.getElementById("mesSiagie").value || todayISO().slice(0,7);
+  const { dias, filas } = calcularResumenMes(ym);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({orientation:"portrait", unit:"pt", format:"a4"});
+  const X = {n:40, nom:62, A:268, F:300, FJ:330, T:362, TJ:392, R:424, fec:452};
+
+  function encabezadoPagina(){
+    doc.setFontSize(13);
+    doc.text("Resumen mensual de asistencia para SIAGIE", 40, 42);
+    doc.setFontSize(10);
+    doc.text('5.° Grado "E" · I.E. N.° 82019 "La Florida del Inca"', 40, 60);
+    doc.setFontSize(9);
+    doc.text(`Mes: ${nombreMes(ym)}  ·  Días lectivos contados: ${dias.length}  ·  Docente: Prof. Walter R. Arribasplata Chavarry`, 40, 76);
+    doc.setDrawColor(200,200,200);
+    doc.line(40, 84, 555, 84);
+    doc.setFontSize(8.5);
+    const h = [["N.°",X.n],["Estudiante",X.nom],["A",X.A],["F",X.F],["FJ",X.FJ],["T",X.T],["TJ",X.TJ],["R",X.R],["Fechas de falta",X.fec]];
+    h.forEach(([t,x])=>doc.text(t, x, 100));
+    doc.setDrawColor(60,60,60);
+    doc.line(40, 105, 555, 105);
+  }
+  encabezadoPagina();
+
+  let y = 120;
+  const tot = {A:0,F:0,FJ:0,T:0,TJ:0,R:0};
+  doc.setFontSize(8.5);
+  filas.forEach(({st,c,fechas})=>{
+    if(y > 770){ doc.addPage(); encabezadoPagina(); y = 120; doc.setFontSize(8.5); }
+    Object.keys(tot).forEach(k=>tot[k]+=c[k]);
+    doc.text(String(st.num).padStart(2,"0"), X.n, y);
+    doc.text(st.nombre.length>40 ? st.nombre.slice(0,40) : st.nombre, X.nom, y);
+    doc.text(String(c.A), X.A, y);
+    doc.text(String(c.F), X.F, y);
+    doc.text(String(c.FJ), X.FJ, y);
+    doc.text(String(c.T), X.T, y);
+    doc.text(String(c.TJ), X.TJ, y);
+    doc.text(String(c.R), X.R, y);
+    const partes = [];
+    if(fechas.F.length) partes.push("F: "+fechas.F.join(","));
+    if(fechas.FJ.length) partes.push("FJ: "+fechas.FJ.join(","));
+    let txt = partes.join("  ");
+    if(txt.length > 30) txt = txt.slice(0,29)+"…";
+    doc.setFontSize(7);
+    doc.text(txt, X.fec, y);
+    doc.setFontSize(8.5);
+    doc.setDrawColor(225,225,225);
+    doc.line(40, y+4, 555, y+4);
+    y += 16;
+  });
+
+  if(y > 760){ doc.addPage(); encabezadoPagina(); y = 120; }
+  doc.setFontSize(9);
+  doc.setDrawColor(60,60,60);
+  doc.line(40, y-8, 555, y-8);
+  doc.text("Total del aula", X.nom, y+4);
+  doc.text(String(tot.A), X.A, y+4);
+  doc.text(String(tot.F), X.F, y+4);
+  doc.text(String(tot.FJ), X.FJ, y+4);
+  doc.text(String(tot.T), X.T, y+4);
+  doc.text(String(tot.TJ), X.TJ, y+4);
+  doc.text(String(tot.R), X.R, y+4);
+  y += 24;
+  doc.setFontSize(7.5);
+  doc.text("A=Asistió  F=Falta injustificada  FJ=Falta justificada  T=Tardanza  TJ=Tardanza justificada  R=Retirado", 40, y);
+  doc.text("Un día sin registro se cuenta como asistencia. Se cuentan solo los días lectivos hasta la fecha de emisión: "+fmtLarga(todayISO())+".", 40, y+11);
+
+  const firmaAncho = 130, firmaAlto = 130*(233/700);
+  let firmaY = y + 34;
+  if(firmaY + firmaAlto + 30 > 800){ doc.addPage(); firmaY = 60; }
+  doc.addImage(FIRMA_DOCENTE_B64, "PNG", 40, firmaY, firmaAncho, firmaAlto);
+  doc.setDrawColor(60,60,60);
+  doc.line(40, firmaY+firmaAlto+4, 40+firmaAncho, firmaY+firmaAlto+4);
+  doc.setFontSize(8.5);
+  doc.text("Prof. Walter R. Arribasplata Chavarry", 40, firmaY+firmaAlto+16);
+  doc.setFontSize(7.5);
+  doc.text('Docente · 5.° Grado "E"', 40, firmaY+firmaAlto+27);
+
+  doc.save(`Resumen_SIAGIE_5E_${ym}.pdf`);
+});
+
 /* ============ TAB: COPIA DE SEGURIDAD ============ */
 function exportarRespaldo(){
   const data = {
@@ -1202,7 +1291,7 @@ window.addEventListener("appinstalled", ()=>{
   deferredInstallPrompt = null;
   document.getElementById("pwaInstallWrap").style.display = "none";
 });
-const APP_VERSION = "20261014-5";
+const APP_VERSION = "20261014-6";
 /* Limpia cachés de versiones anteriores una sola vez por versión.
    No toca localStorage, así que la asistencia y los contactos se conservan. */
 (async function limpiarCacheVieja(){
