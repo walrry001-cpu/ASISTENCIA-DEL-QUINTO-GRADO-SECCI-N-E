@@ -7,6 +7,9 @@ Aplicación web (PWA) para registrar la asistencia diaria, avisar a los padres p
 - **Falta justificada (FJ):** agradece la comunicación y recuerda presentar el documento sustentatorio.
 - **Tardanza, tardanza justificada y retirado:** mensaje básico, sin párrafo adicional.
 
+## Pestaña "Resumen SIAGIE"
+Totales mensuales por estudiante (A, F, FJ, T, TJ, R) con las fechas de falta, y botón para copiar el resumen. No envía datos al SIAGIE: sirve para ingresarlos con tu usuario sin errores.
+
 ## Publicar en GitHub Pages
 1. Sube `index.html` y `service-worker.js` a tu repositorio, reemplazando los anteriores. Deja `manifest.json` e íconos como están.
 2. En **Settings → Pages**, elige la rama `main` y la carpeta `/ (root)`.

@@ -273,6 +273,7 @@
   <button data-tab="contactos">Contactos</button>
   <button data-tab="informe">Informe semanal</button>
   <button data-tab="calendario">Calendario</button>
+  <button data-tab="siagie">Resumen SIAGIE</button>
   <button data-tab="respaldo">Copia de seguridad</button>
 </nav>
 
@@ -375,6 +376,34 @@
     <textarea id="noLectivos" rows="16" style="width:100%;"></textarea>
     <br>
     <button class="primary" id="btnGuardarCalendario">Guardar cambios</button>
+  </section>
+
+  <!-- ===== TAB: RESUMEN SIAGIE ===== -->
+  <section id="tab-siagie">
+    <h2>Resumen mensual para SIAGIE</h2>
+    <p class="note">
+      Totales por estudiante del mes elegido, para copiarlos al SIAGIE sin errores. Se cuentan solo los
+      días lectivos hasta hoy; un día sin registro se toma como asistencia (igual que en los informes PDF).
+      Esta pestaña no envía nada al SIAGIE: tú ingresas los datos con tu usuario.
+    </p>
+    <div class="field-row">
+      <label for="mesSiagie">Mes:</label>
+      <input type="month" id="mesSiagie">
+      <button class="ghost" id="btnCopiarSiagie">📋 Copiar resumen</button>
+    </div>
+    <div id="infoSiagie" class="day-status lectivo"></div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead><tr>
+          <th class="num">N.°</th><th>Estudiante</th>
+          <th title="Asistencias">A</th><th title="Falta injustificada">F</th>
+          <th title="Falta justificada">FJ</th><th title="Tardanza">T</th>
+          <th title="Tardanza justificada">TJ</th><th title="Retirado">R</th>
+        </tr></thead>
+        <tbody id="listaSiagie"></tbody>
+      </table>
+    </div>
+    <p class="note" style="margin-top:14px;">A=Asistió · F=Falta injustificada · FJ=Falta justificada · T=Tardanza · TJ=Tardanza justificada · R=Retirado</p>
   </section>
 
   <!-- ===== TAB: COPIA DE SEGURIDAD ===== -->
@@ -1042,6 +1071,76 @@ document.getElementById("btnInformesTodos").addEventListener("click", async ()=>
   setTimeout(()=>URL.revokeObjectURL(url), 4000);
 });
 
+/* ============ TAB: RESUMEN SIAGIE ============ */
+function calcularResumenMes(ym){
+  const [y,m] = ym.split("-").map(Number);
+  const ultimo = new Date(y, m, 0).getDate();
+  const hoy = todayISO();
+  const dias = [];
+  for(let d=1; d<=ultimo; d++){
+    const iso = y+"-"+String(m).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+    if(iso <= hoy && isSchoolDay(iso)) dias.push(iso);
+  }
+  const all = getAttendance();
+  const filas = rosterOrdenadoAsist().map(st=>{
+    const c = {A:0, F:0, FJ:0, T:0, TJ:0, R:0};
+    const fechas = {F:[], FJ:[]};
+    dias.forEach(iso=>{
+      const e = getEstado(all[iso] && all[iso][st.id]) || "A";
+      if(c[e] !== undefined) c[e]++;
+      if(e==="F" || e==="FJ") fechas[e].push(iso.slice(8,10));
+    });
+    return { st, c, fechas };
+  });
+  return { dias, filas };
+}
+function renderSiagie(){
+  const inp = document.getElementById("mesSiagie");
+  if(!inp.value) inp.value = todayISO().slice(0,7);
+  const { dias, filas } = calcularResumenMes(inp.value);
+  const info = document.getElementById("infoSiagie");
+  info.textContent = dias.length
+    ? `Días lectivos contados: ${dias.length} (del ${fmtLarga(dias[0])} al ${fmtLarga(dias[dias.length-1])}).`
+    : "Este mes no tiene días lectivos hasta hoy.";
+  const tb = document.getElementById("listaSiagie");
+  tb.innerHTML = "";
+  const tot = {A:0, F:0, FJ:0, T:0, TJ:0, R:0};
+  filas.forEach(({st, c, fechas})=>{
+    Object.keys(tot).forEach(k=>tot[k]+=c[k]);
+    const det = [];
+    if(fechas.F.length) det.push("F: "+fechas.F.join(", "));
+    if(fechas.FJ.length) det.push("FJ: "+fechas.FJ.join(", "));
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td class="num">${String(st.num).padStart(2,"0")}</td>
+      <td>${st.nombre}${det.length ? `<div style="font-size:.7rem;color:#8a8272;">${det.join(" · ")}</div>` : ""}</td>
+      <td>${c.A}</td><td>${c.F}</td><td>${c.FJ}</td><td>${c.T}</td><td>${c.TJ}</td><td>${c.R}</td>`;
+    tb.appendChild(tr);
+  });
+  const trT = document.createElement("tr");
+  trT.style.fontWeight = "bold";
+  trT.innerHTML = `<td></td><td>Total del aula</td><td>${tot.A}</td><td>${tot.F}</td><td>${tot.FJ}</td><td>${tot.T}</td><td>${tot.TJ}</td><td>${tot.R}</td>`;
+  tb.appendChild(trT);
+}
+document.getElementById("mesSiagie").addEventListener("change", renderSiagie);
+document.querySelector('nav button[data-tab="siagie"]').addEventListener("click", renderSiagie);
+document.getElementById("btnCopiarSiagie").addEventListener("click", async ()=>{
+  const ym = document.getElementById("mesSiagie").value || todayISO().slice(0,7);
+  const { dias, filas } = calcularResumenMes(ym);
+  const lineas = ["N.°\tEstudiante\tAsistencias\tF\tFJ\tT\tTJ\tR"];
+  filas.forEach(({st,c})=> lineas.push([String(st.num).padStart(2,"0"), st.nombre, c.A, c.F, c.FJ, c.T, c.TJ, c.R].join("\t")));
+  const texto = `Resumen de asistencia ${ym} · 5.° "E" · Días lectivos: ${dias.length}\n` + lineas.join("\n");
+  try{
+    await navigator.clipboard.writeText(texto);
+    alert("Resumen copiado. Puedes pegarlo en una hoja de cálculo o en un mensaje.");
+  }catch(e){
+    const ta = document.createElement("textarea");
+    ta.value = texto; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); alert("Resumen copiado."); }
+    catch(e2){ alert("No se pudo copiar automáticamente."); }
+    ta.remove();
+  }
+});
+
 /* ============ TAB: COPIA DE SEGURIDAD ============ */
 function exportarRespaldo(){
   const data = {
@@ -1103,7 +1202,7 @@ window.addEventListener("appinstalled", ()=>{
   deferredInstallPrompt = null;
   document.getElementById("pwaInstallWrap").style.display = "none";
 });
-const APP_VERSION = "20261014-4";
+const APP_VERSION = "20261014-5";
 /* Limpia cachés de versiones anteriores una sola vez por versión.
    No toca localStorage, así que la asistencia y los contactos se conservan. */
 (async function limpiarCacheVieja(){
