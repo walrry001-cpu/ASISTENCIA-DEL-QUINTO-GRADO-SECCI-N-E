@@ -2,6 +2,9 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Asistencia · 5.° "E" · I.E. 82019 La Florida</title>
 
@@ -713,6 +716,30 @@ document.getElementById("btnGuardarAsistencia").addEventListener("click", ()=>{
   renderWaList(iso, dayRecord);
 });
 
+/* Mensaje de WhatsApp para los padres. Para faltas injustificadas (F) y tardanzas (T)
+   se añade un párrafo cordial sobre la corresponsabilidad familiar y los lineamientos
+   del Ministerio de Educación. Se redacta igual para todas las familias. */
+function armarMensajeWA(st, estado, horaTexto, iso){
+  const saludo = "Estimado(a) padre/madre de familia, reciba un cordial saludo.";
+  const cuerpo = `Le informamos que su menor hijo(a) ${st.nombre} registró la asistencia "${ESTADOS[estado].label}"${horaTexto} el día ${fmtLarga(iso)} en el 5.° Grado Sección "E" de la I.E. N.° 82019 "La Florida del Inca".`;
+
+  let aviso = "";
+  if(estado === "F"){
+    aviso =
+`A partir de la fecha, el Ministerio de Educación ha establecido nuevos lineamientos sobre la asistencia regular de los estudiantes. La educación es un derecho de su hijo(a) y asegurar que asista todos los días es una responsabilidad de la familia; por ello, su compromiso es indispensable.
+
+Si su hijo(a) faltó por motivos de salud, le pedimos presentar el sustento correspondiente (receta médica, cita o constancia de atención, o certificado del establecimiento de salud) para registrar la inasistencia como justificada. Con gusto conversaremos con usted y el docente acompañará a su hijo(a) en su recuperación pedagógica.
+
+Le informamos que, cuando las inasistencias se repiten sin justificación, corresponde comunicarlo a la Dirección de la institución para el seguimiento y las acciones que prevé la normativa vigente. Se lo hacemos saber con respeto y únicamente por el bienestar y los aprendizajes de su hijo(a).`;
+  } else if(estado === "T"){
+    aviso =
+`Le recordamos que, según los lineamientos del Ministerio de Educación, la asistencia y la puntualidad son parte del compromiso con el aprendizaje de su hijo(a). Gracias por su apoyo.`;
+  }
+
+  const cierre = "Cualquier consulta, puede comunicarse con el docente. Atentamente, Prof. Walter Arribasplata.";
+  return [saludo, cuerpo, aviso, cierre].filter(Boolean).join("\n\n");
+}
+
 function renderWaList(iso, dayRecord){
   const phones = getPhones();
   const container = document.getElementById("waList");
@@ -732,7 +759,7 @@ function renderWaList(iso, dayRecord){
     const hora = getHora(dayRecord[st.id]);
     const horaTexto = hora ? ` a las ${hora} horas` : "";
     const phone = (phones[st.id] || "").replace(/\D/g,"");
-    const mensaje = `Estimado padre/madre de familia, le informamos que su menor hijo(a) ${st.nombre} registró la asistencia "${ESTADOS[estado].label}"${horaTexto} el día ${fmtLarga(iso)} en el 5.° Grado Sección "E" de la I.E. N.° 82019 "La Florida del Inca". Cualquier consulta, puede comunicarse con el docente. Atentamente, Prof. Walter Arribasplata.`;
+    const mensaje = armarMensajeWA(st, estado, horaTexto, iso);
     const link = phone
       ? `https://wa.me/${phone}?text=${encodeURIComponent(mensaje)}`
       : "#";
@@ -1076,9 +1103,28 @@ window.addEventListener("appinstalled", ()=>{
   deferredInstallPrompt = null;
   document.getElementById("pwaInstallWrap").style.display = "none";
 });
+const APP_VERSION = "20261014-2";
+/* Limpia cachés de versiones anteriores una sola vez por versión.
+   No toca localStorage, así que la asistencia y los contactos se conservan. */
+(async function limpiarCacheVieja(){
+  try{
+    if(localStorage.getItem("appVersion") === APP_VERSION) return;
+    if("caches" in window){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+    }
+    localStorage.setItem("appVersion", APP_VERSION);
+  }catch(e){ console.error(e); }
+})();
 if("serviceWorker" in navigator){
   window.addEventListener("load", ()=>{
-    navigator.serviceWorker.register("service-worker.js").catch(()=>{});
+    navigator.serviceWorker.register("service-worker.js?v="+APP_VERSION)
+      .then(reg=>reg.update())
+      .catch(()=>{});
+  });
+  let recargado = false;
+  navigator.serviceWorker.addEventListener("controllerchange", ()=>{
+    if(recargado) return; recargado = true; location.reload();
   });
 }
 
