@@ -4,6 +4,7 @@ Aplicación web (PWA) para registrar la asistencia diaria, avisar a los padres p
 
 ## Mensajes de WhatsApp
 - **Falta injustificada (F):** destaca lo que el estudiante pierde cada día que falta, apela al rol de la familia y pide el documento sustentatorio (receta, cita, certificado o solicitud de permiso).
+- **Falta injustificada, 3.er día consecutivo:** además advierte que, de producirse la 4.ª falta, se elevará un informe al Director para convocar al padre/madre. **4.º día o más:** comunica que se eleva el informe, y en la lista aparece el botón **"Informe al Director"** que descarga el PDF (A4, con firma y cargo de recepción).
 - **Falta justificada (FJ):** agradece la comunicación y recuerda presentar el documento sustentatorio.
 - **Tardanza, tardanza justificada y retirado:** mensaje básico, sin párrafo adicional.
 
