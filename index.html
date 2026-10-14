@@ -716,27 +716,27 @@ document.getElementById("btnGuardarAsistencia").addEventListener("click", ()=>{
   renderWaList(iso, dayRecord);
 });
 
-/* Mensaje de WhatsApp para los padres. Para faltas injustificadas (F) y tardanzas (T)
-   se añade un párrafo cordial sobre la corresponsabilidad familiar y los lineamientos
-   del Ministerio de Educación. Se redacta igual para todas las familias. */
+/* Mensaje de WhatsApp para los padres. Solo para faltas injustificadas (F) y faltas
+   justificadas (FJ) se añade un párrafo sobre el documento sustentatorio. Redactado en
+   primera persona (el docente es quien registra la asistencia). Igual para todas las familias. */
 function armarMensajeWA(st, estado, horaTexto, iso){
   const saludo = "Estimado(a) padre/madre de familia, reciba un cordial saludo.";
-  const cuerpo = `Le informamos que su menor hijo(a) ${st.nombre} registró la asistencia "${ESTADOS[estado].label}"${horaTexto} el día ${fmtLarga(iso)} en el 5.° Grado Sección "E" de la I.E. N.° 82019 "La Florida del Inca".`;
+  const cuerpo = `Le informo que su menor hijo(a) ${st.nombre} registró la asistencia "${ESTADOS[estado].label}"${horaTexto} el día ${fmtLarga(iso)} en el 5.° Grado Sección "E" de la I.E. N.° 82019 "La Florida del Inca".`;
 
   let aviso = "";
   if(estado === "F"){
     aviso =
-`A partir de la fecha, el Ministerio de Educación ha establecido nuevos lineamientos sobre la asistencia regular de los estudiantes. La educación es un derecho de su hijo(a) y asegurar que asista todos los días es una responsabilidad de la familia; por ello, su compromiso es indispensable.
+`La asistencia diaria es fundamental para el aprendizaje de su hijo(a): cada día que no viene a clases pierde explicaciones, prácticas y momentos con sus compañeros que después ya no se recuperan igual. Él o ella depende de usted para llegar al aula, y está en sus manos que no se quede atrás.
 
-Si su hijo(a) faltó por motivos de salud, le pedimos presentar el sustento correspondiente (receta médica, cita o constancia de atención, o certificado del establecimiento de salud) para registrar la inasistencia como justificada. Con gusto conversaremos con usted y el docente acompañará a su hijo(a) en su recuperación pedagógica.
+Si la inasistencia fue por motivos de salud o por un permiso, le pido presentar el documento sustentatorio (receta médica, cita o constancia de atención, certificado del establecimiento de salud, o solicitud de permiso) para registrarla como justificada.
 
-Le informamos que, cuando las inasistencias se repiten sin justificación, corresponde comunicarlo a la Dirección de la institución para el seguimiento y las acciones que prevé la normativa vigente. Se lo hacemos saber con respeto y únicamente por el bienestar y los aprendizajes de su hijo(a).`;
-  } else if(estado === "T"){
+Yo siempre estaré dispuesto a apoyarlo(a) para que se ponga al día, pero lo más importante es que esté presente. Confío en que usted, como su principal apoyo, hará todo lo posible para que no vuelva a faltar. Gracias.`;
+  } else if(estado === "FJ"){
     aviso =
-`Le recordamos que, según los lineamientos del Ministerio de Educación, la asistencia y la puntualidad son parte del compromiso con el aprendizaje de su hijo(a). Gracias por su apoyo.`;
+`Gracias por comunicarse. Le recuerdo que, para respaldar la justificación, debe presentar el documento sustentatorio correspondiente (receta médica, cita o constancia de atención, certificado del establecimiento de salud, o solicitud de permiso). Apoyaré a su hijo(a) para que se ponga al día con lo avanzado en clase.`;
   }
 
-  const cierre = "Cualquier consulta, puede comunicarse con el docente. Atentamente, Prof. Walter Arribasplata.";
+  const cierre = "Cualquier consulta, puede comunicarse conmigo. Atentamente, Prof. Walter Arribasplata.";
   return [saludo, cuerpo, aviso, cierre].filter(Boolean).join("\n\n");
 }
 
@@ -1103,7 +1103,7 @@ window.addEventListener("appinstalled", ()=>{
   deferredInstallPrompt = null;
   document.getElementById("pwaInstallWrap").style.display = "none";
 });
-const APP_VERSION = "20261014-2";
+const APP_VERSION = "20261014-4";
 /* Limpia cachés de versiones anteriores una sola vez por versión.
    No toca localStorage, así que la asistencia y los contactos se conservan. */
 (async function limpiarCacheVieja(){
