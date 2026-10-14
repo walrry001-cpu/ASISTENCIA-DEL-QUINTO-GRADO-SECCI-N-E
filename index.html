@@ -851,6 +851,10 @@ function generarInformeDirector(stId, iso){
   if(!window.jspdf){ alert("No se pudo cargar el generador de PDF. Verifica tu conexión a internet e inténtalo de nuevo."); return; }
   const st = STUDENTS.find(x => String(x.id) === String(stId));
   if(!st){ alert("No se encontró al estudiante."); return; }
+  const fechas = fechasRachaF(st.id, iso);
+  /* Fecha del informe = día de la 4.ª falta consecutiva; fecha del WhatsApp = día anterior (3.ª falta). */
+  const fechaInforme = fechas[3] || iso;
+  const fechaWA = fechas[2] || fechas[fechas.length-2] || iso;
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:"portrait", unit:"pt", format:"a4"});
   const L = 56, W = 483;
@@ -879,14 +883,14 @@ function generarInformeDirector(stId, iso){
   filaMemo("Atención", "Subdirector(a) que disponga el Director");
   filaMemo("De", 'Prof. Walter Rodrigo Arribasplata Chavarry — Docente del 5.° Grado "E"');
   filaMemo("Asunto", `Informe sobre inasistencias consecutivas del(a) estudiante ${st.nombre}`);
-  filaMemo("Fecha", `Cajamarca, ${fmtLarga(iso)}`);
+  filaMemo("Fecha", `Cajamarca, ${fmtLarga(fechaInforme)}`);
   doc.line(L, y, L+W, y); y += 20;
 
   parrafo(`Me dirijo a usted para ponerle en conocimiento que el(la) estudiante ${st.nombre}, de 5.° Grado Sección "E", registra varias inasistencias injustificadas consecutivas, según el registro de asistencia del aula.`);
   y += 6;
-  parrafo(`Al padre, madre o apoderado se le han enviado por WhatsApp los mensajes respectivos por cada inasistencia registrada y, pese a ello, el(la) estudiante continúa sin asistir a clases.`);
+  parrafo(`La comunicación con el padre, madre o apoderado se realizó por WhatsApp: se le enviaron los mensajes respectivos por cada inasistencia registrada, el último con fecha ${fmtLarga(fechaWA)}, y pese a ello el(la) estudiante continúa sin asistir a clases.`);
   y += 6;
-  parrafo(`Por esta razón, viéndome en la necesidad de poner el caso en su conocimiento, ruego a su despacho, si lo considera pertinente, disponer lo que corresponda para que el padre, madre o apoderado pueda justificar las inasistencias ante el Director o el Subdirector que usted disponga, en bien del derecho a la educación del(a) estudiante.`);
+  parrafo(`Por esta razón, viéndome en la necesidad de informar a la Dirección, ruego a su despacho, si lo considera pertinente, disponer lo que corresponda para que el padre, madre o apoderado pueda justificar las inasistencias ante el Director o el Subdirector que usted disponga, en bien del derecho a la educación del(a) estudiante.`);
   y += 6;
   parrafo("Es todo cuanto informo para su conocimiento.");
   y += 6;
@@ -1395,7 +1399,8 @@ window.addEventListener("appinstalled", ()=>{
   deferredInstallPrompt = null;
   document.getElementById("pwaInstallWrap").style.display = "none";
 });
-const APP_VERSION = "20261014-9";
+const APP_VERSION = "20261014-10";
+window.addEventListener("load", ()=>{ const v = document.getElementById("versionApp"); if(v) v.textContent = "Versión " + APP_VERSION; });
 /* Limpia cachés de versiones anteriores una sola vez por versión.
    No toca localStorage, así que la asistencia y los contactos se conservan. */
 (async function limpiarCacheVieja(){
@@ -1445,5 +1450,6 @@ renderContactos();
 renderCalendario();
 renderGestionEstudiantesAsist();
 </script>
+<div id="versionApp" style="text-align:center;font-size:.7rem;color:#8a8272;padding:14px 0 24px;"></div>
 </body>
 </html>
