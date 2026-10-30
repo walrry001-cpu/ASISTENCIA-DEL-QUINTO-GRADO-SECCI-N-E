@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2a4142">
+<title>Registrar asistencia · 5.° "E"</title>
+<style>
+  :root{
+    --ink:#1c2b2d; --paper:#f6f3ec; --line:#d8cfbd; --slate:#3f5b5c; --slate-d:#2a4142;
+    --ok:#3d6b4f; --ok-bg:#e3ede2; --warn:#a15c1f; --warn-bg:#f4e6d3;
+    --bad:#a1352f; --bad-bg:#f5e0dd; --accent:#b5482f;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:Georgia,'Iowan Old Style',serif;background:var(--paper);color:var(--ink);line-height:1.45;}
+  header{background:var(--slate-d);color:var(--paper);padding:18px 16px;border-bottom:4px solid var(--accent);}
+  header h1{margin:0 0 3px;font-size:1.3rem;font-weight:normal;}
+  header p{margin:0;font-family:Arial,sans-serif;font-size:.78rem;opacity:.85;}
+  main{max-width:520px;margin:0 auto;padding:18px 14px 50px;}
+  .card{font-family:Arial,sans-serif;font-size:.95rem;padding:14px 16px;border-radius:8px;background:#fff;border:1px solid var(--line);margin-bottom:14px;}
+  .card.ok{background:var(--ok-bg);border-color:#b9d1b8;color:var(--ok);}
+  .card.warn{background:var(--warn-bg);border-color:#e3c9a6;color:var(--warn);}
+  .card.bad{background:var(--bad-bg);border-color:#e6bdb7;color:var(--bad);}
+  .card strong.grande{display:block;font-family:Georgia,serif;font-size:1.25rem;font-weight:normal;margin-bottom:4px;}
+  h2{font-size:1.02rem;color:var(--slate-d);border-bottom:2px solid var(--line);padding-bottom:6px;margin:0 0 12px;font-weight:normal;}
+  input[type=search],input[type=text]{width:100%;font-family:Arial,sans-serif;font-size:1.05rem;padding:12px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);}
+  input.codigo{font-size:1.8rem;letter-spacing:.35em;text-align:center;padding:12px 8px;}
+  input:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+  #lista{margin-top:10px;}
+  #lista button{display:block;width:100%;text-align:left;font-family:Arial,sans-serif;font-size:1rem;padding:13px 14px;margin-bottom:7px;background:#fff;border:1px solid var(--line);border-radius:6px;color:var(--ink);cursor:pointer;}
+  #lista button:active{background:#efe9d8;}
+  button.primary{width:100%;font-family:Arial,sans-serif;font-size:1.05rem;background:var(--accent);color:#fff;border:none;padding:14px;border-radius:6px;cursor:pointer;margin-top:12px;}
+  button.primary:disabled{background:#b9b3a3;cursor:default;}
+  button.enlace{font-family:Arial,sans-serif;font-size:.85rem;background:none;border:none;color:var(--slate);text-decoration:underline;cursor:pointer;padding:6px 0;}
+  label{display:block;font-family:Arial,sans-serif;font-size:.88rem;color:#5d5648;margin:14px 0 6px;}
+  .yo{font-family:Arial,sans-serif;font-size:1rem;margin:0 0 4px;}
+  .vacio{font-family:Arial,sans-serif;font-size:.9rem;color:#6b6355;padding:10px 2px;}
+  [hidden]{display:none !important;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Registrar mi asistencia</h1>
+  <p>5.° Grado "E" · I.E. N.° 82019 "La Florida del Inca"</p>
+</header>
+
+<main>
+  <div id="aviso" class="card" role="status">Cargando…</div>
+
+  <section id="paso1" hidden>
+    <h2>Busca tu nombre y tócalo</h2>
+    <input type="search" id="buscar" placeholder="Escribe tu apellido o tu nombre" autocomplete="off">
+    <div id="lista"></div>
+  </section>
+
+  <section id="paso2" hidden>
+    <p class="yo">Vas a registrar a: <strong id="miNombre"></strong></p>
+    <button class="enlace" id="cambiar" type="button">No soy yo, volver a la lista</button>
+    <label for="codigo">Código de hoy (el profesor lo escribe en la pizarra)</label>
+    <input type="text" id="codigo" class="codigo" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off">
+    <button class="primary" id="enviar" type="button">Registrar mi asistencia</button>
+  </section>
+
+  <section id="listo" hidden>
+    <button class="enlace" id="otro" type="button">Registrar a otro estudiante desde este celular</button>
+  </section>
+</main>
+
+<script>
+(function(){
+  const params = new URLSearchParams(location.search);
+  const API = params.get("s") || "";
+  const aviso = document.getElementById("aviso");
+  const paso1 = document.getElementById("paso1");
+  const paso2 = document.getElementById("paso2");
+  const listo = document.getElementById("listo");
+  const lista = document.getElementById("lista");
+  const buscar = document.getElementById("buscar");
+  const codigo = document.getElementById("codigo");
+  const enviar = document.getElementById("enviar");
+
+  let roster = [];
+  let fechaSesion = "";
+  let elegido = null;
+
+  function mostrar(clase, titulo, texto){
+    aviso.className = "card " + clase;
+    aviso.innerHTML = "";
+    if(titulo){
+      const s = document.createElement("strong");
+      s.className = "grande";
+      s.textContent = titulo;
+      aviso.appendChild(s);
+    }
+    if(texto){
+      const t = document.createElement("span");
+      t.textContent = texto;
+      aviso.appendChild(t);
+    }
+  }
+  function soloPaso(cual){
+    paso1.hidden = cual !== 1;
+    paso2.hidden = cual !== 2;
+    listo.hidden = cual !== 3;
+  }
+  function norm(t){
+    return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  }
+  function llaveLocal(){ return "qr5E_" + fechaSesion; }
+  function yaRegistradoAqui(){
+    try{ return JSON.parse(localStorage.getItem(llaveLocal()) || "null"); }catch(e){ return null; }
+  }
+  function recordarAqui(datos){
+    try{ localStorage.setItem(llaveLocal(), JSON.stringify(datos)); }catch(e){}
+  }
+
+  async function pedir(opciones, url){
+    const ctl = new AbortController();
+    const t = setTimeout(()=>ctl.abort(), 25000);
+    try{
+      const r = await fetch(url, Object.assign({signal: ctl.signal}, opciones));
+      return await r.json();
+    } finally { clearTimeout(t); }
+  }
+
+  function pintarLista(){
+    const q = norm(buscar.value.trim());
+    lista.innerHTML = "";
+    const coinciden = roster.filter(r => !q || norm(r.nombre).includes(q));
+    if(!coinciden.length){
+      const d = document.createElement("div");
+      d.className = "vacio";
+      d.textContent = "No encontré ese nombre. Revisa cómo lo escribiste.";
+      lista.appendChild(d);
+      return;
+    }
+    coinciden.forEach(r=>{
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = r.nombre;
+      b.addEventListener("click", ()=> elegir(r));
+      lista.appendChild(b);
+    });
+  }
+
+  function elegir(r){
+    elegido = r;
+    document.getElementById("miNombre").textContent = r.nombre;
+    codigo.value = "";
+    soloPaso(2);
+    mostrar("", "", "Escribe el código y toca el botón.");
+    codigo.focus();
+  }
+
+  function mostrarListo(nombre, hora, yaEstaba){
+    soloPaso(3);
+    mostrar("ok",
+      yaEstaba ? "Tu asistencia ya estaba registrada" : "Asistencia registrada",
+      nombre + " · " + hora + " (hora, minutos y segundos)");
+  }
+
+  buscar.addEventListener("input", pintarLista);
+  document.getElementById("cambiar").addEventListener("click", ()=>{
+    elegido = null; soloPaso(1); mostrar("", "", "Busca tu nombre en la lista."); buscar.focus();
+  });
+  document.getElementById("otro").addEventListener("click", ()=>{
+    if(!confirm("Este celular ya registró a un estudiante hoy. ¿Quieres registrar a otro desde aquí?")) return;
+    buscar.value = ""; pintarLista(); soloPaso(1); mostrar("", "", "Busca el nombre en la lista.");
+  });
+
+  enviar.addEventListener("click", async ()=>{
+    if(!elegido) return;
+    const c = codigo.value.trim();
+    if(!c){ mostrar("warn", "Falta el código", "Míralo en la pizarra y escríbelo arriba."); codigo.focus(); return; }
+    enviar.disabled = true;
+    enviar.textContent = "Enviando…";
+    try{
+      const j = await pedir({
+        method: "POST",
+        headers: {"Content-Type": "text/plain;charset=utf-8"},
+        body: JSON.stringify({accion: "marcar", id: elegido.id, codigo: c})
+      }, API);
+      if(j.ok){
+        recordarAqui({id: elegido.id, nombre: j.nombre, hora: j.hora});
+        mostrarListo(j.nombre, j.hora, j.ya);
+      }else if(j.error === "codigo"){
+        mostrar("bad", "El código no coincide", "Míralo otra vez en la pizarra y vuelve a intentarlo.");
+        codigo.select();
+      }else if(j.error === "cerrado"){
+        soloPaso(0);
+        mostrar("warn", "El registro ya se cerró", "Avisa a tu profesor para que anote tu asistencia.");
+      }else if(j.error === "bloqueado"){
+        mostrar("bad", "Hubo demasiados intentos", "Avisa a tu profesor.");
+      }else{
+        mostrar("bad", "No se pudo registrar", "Avisa a tu profesor.");
+      }
+    }catch(e){
+      mostrar("bad", "No hay conexión", "Revisa tus datos o el wifi e inténtalo de nuevo.");
+    }finally{
+      enviar.disabled = false;
+      enviar.textContent = "Registrar mi asistencia";
+    }
+  });
+  codigo.addEventListener("keydown", e=>{ if(e.key === "Enter") enviar.click(); });
+
+  async function iniciar(){
+    if(!/^https:\/\/script\.google(usercontent)?\.com\//.test(API)){
+      soloPaso(0);
+      mostrar("bad", "Este enlace no es válido", "Escanea de nuevo el QR que muestra tu profesor.");
+      return;
+    }
+    try{
+      const j = await pedir({method: "GET"}, API + (API.includes("?") ? "&" : "?") + "accion=sesion");
+      if(!j.ok){ throw new Error(j.error || "error"); }
+      if(!j.abierta){
+        soloPaso(0);
+        const motivos = {
+          fuera_de_hora: "Ya pasó la hora límite del registro (" + (j.cierra || "") + " h). Avisa a tu profesor.",
+          otra_fecha: "El registro de hoy todavía no se abrió. Espera la indicación de tu profesor.",
+        };
+        mostrar("warn", "El registro está cerrado", motivos[j.motivo] || "Espera la indicación de tu profesor.");
+        return;
+      }
+      roster = j.roster || [];
+      fechaSesion = j.fecha;
+      const previo = yaRegistradoAqui();
+      if(previo){
+        mostrarListo(previo.nombre, previo.hora, true);
+        return;
+      }
+      pintarLista();
+      soloPaso(1);
+      mostrar("", "", "Busca tu nombre en la lista.");
+    }catch(e){
+      soloPaso(0);
+      mostrar("bad", "No se pudo cargar", "Revisa tu conexión y vuelve a escanear el QR.");
+    }
+  }
+  iniciar();
+})();
+</script>
+</body>
+</html>

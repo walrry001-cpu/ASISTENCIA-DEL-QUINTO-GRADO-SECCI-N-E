@@ -1,0 +1,47 @@
+ASISTENCIA POR QR · 5.° "E" · I.E. 82019 La Florida del Inca
+=============================================================
+
+ARCHIVOS
+  index.html      -> tu app, con la pestaña nueva "Asistencia QR". REEMPLAZA al que tienes en GitHub.
+  estudiante.html -> página que abren los estudiantes. SÚBELA a la misma carpeta que index.html.
+  Code.gs         -> código para tu hoja de Google (no se sube a GitHub).
+
+PASO A: preparar la hoja de Google (una sola vez, desde la computadora)
+  1. Entra a sheets.google.com y crea una hoja en blanco. Ponle el nombre "Asistencia QR 5E".
+  2. Menú Extensiones > Apps Script.
+  3. Borra lo que aparece, pega todo el contenido de Code.gs.
+  4. En la línea  const CLAVE_DOCENTE = 'CAMBIA-ESTA-CLAVE';  escribe una clave tuya
+     (solo tú la sabrás). Guarda con Ctrl+S.
+  5. Botón azul "Implementar" > "Nueva implementación".
+       Tipo: Aplicación web
+       Ejecutar como: Yo
+       Quién tiene acceso: Cualquier persona
+     Toca "Implementar". Google pedirá permisos: acepta. Si aparece "Google no verificó
+     esta aplicación", toca "Configuración avanzada" y luego "Ir a (nombre del proyecto)".
+  6. Copia la "URL de la aplicación web" (termina en /exec).
+
+PASO B: subir los archivos a GitHub
+  Sube index.html (reemplazando) y estudiante.html al mismo repositorio.
+  En el celular: pestaña "Copia de seguridad" > "Borrar caché y actualizar app".
+  Tu asistencia y contactos no se borran.
+
+PASO C: conectar la app (una sola vez, en el celular)
+  Pestaña "Asistencia QR" > paso 1: pega la URL y escribe la misma clave del script.
+  Toca "Guardar conexión".
+
+USO DIARIO
+  1. "Asistencia QR": revisa la hora límite de puntualidad y la hora de cierre.
+  2. Toca "Abrir registro y mostrar QR". Proyecta el QR y escribe el código en la pizarra.
+  3. Los estudiantes escanean, tocan su nombre, escriben el código y registran.
+  4. Toca "Traer marcas de hoy". Quien marcó a tiempo queda con A, después de la hora límite
+     con T, y quien no marcó con F.
+  5. "Ir a Pasar asistencia": cambia a mano las justificaciones (FJ, TJ) y los retiros (R),
+     y toca "Guardar asistencia del día".
+
+OJO
+  - Nada se guarda hasta que tú toques "Guardar asistencia del día".
+  - Si cambias Code.gs después, hay que hacer Implementar > Administrar implementaciones >
+    editar > Nueva versión, para que los cambios se apliquen con la misma URL.
+  - El código del día evita que marquen desde casa, pero un estudiante podría pasarle el
+    código a un compañero ausente. Por eso ves la hora de cada marca y tú decides al guardar.
+  - La hoja guarda nombres de estudiantes: no la compartas.
